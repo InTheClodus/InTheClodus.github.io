@@ -1,38 +1,174 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="/">
-
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="yun_yuanshen_wish_export_flutter">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>yun_yuanshen_wish_export_flutter</title>
-  <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原神Webview</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .app-bar {
+            background-color: white;
+            text-align: center;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .app-bar-title {
+            color: black;
+            font-size: 16px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background-color: transparent;
+        }
+        .progress {
+            height: 100%;
+            background-color: red;
+            transition: width 0.2s;
+        }
+        .webview {
+            flex: 1;
+            border: none;
+        }
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            display: none;
+        }
+        .dialog {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .dialog-actions {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .dialog-actions button {
+            margin-left: 10px;
+        }
+    </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+    <div class="app-bar">
+        <div class="app-bar-title">原神Webview</div>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+    </div>
+    <iframe src="https://ys.mihoyo.com/cloud/m/#/" class="webview" id="webview"></iframe>
+
+    <div class="dialog-overlay" id="usageDialog">
+        <div class="dialog">
+            <h2>本工具使用方法</h2>
+            <p>登录云原神并打开游戏，然后在抽卡祈福界面打开历史记录，程序就会自动推断出抽卡记录分析地址了</p>
+            <p>注：本工具属于第三方工具，但是访问的是官方云原神网站，不采集任何信息，仅供学习和交流使用，请在24小时内删除</p>
+            <p>开发者:https://github.com/InTheClodus</p>
+            <div class="dialog-actions">
+                <button onclick="closeUsageDialog()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog-overlay" id="urlDialog">
+        <div class="dialog">
+            <h2>截获到的地址</h2>
+            <p id="urlContent"></p>
+            <div class="dialog-actions">
+                <button onclick="copyToClipboard()">复制到剪贴板</button>
+                <button onclick="closeUrlDialog()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div id="testContainer"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            showUsageDialog();
+        });
+
+        const webview = document.getElementById('webview');
+        const progressBar = document.getElementById('progress');
+
+        webview.onload = () => {
+            progressBar.style.width = '100%';
+            setTimeout(() => progressBar.style.width = '0', 500);
+        };
+
+        function showUsageDialog() {
+            document.getElementById('usageDialog').style.display = 'flex';
+        }
+
+        function closeUsageDialog() {
+            document.getElementById('usageDialog').style.display = 'none';
+        }
+
+        function showUrlDialog(url) {
+            document.getElementById('urlContent').textContent = url;
+            document.getElementById('urlDialog').style.display = 'flex';
+        }
+
+        function closeUrlDialog() {
+            document.getElementById('urlDialog').style.display = 'none';
+        }
+
+        function copyToClipboard() {
+            const urlContent = document.getElementById('urlContent').textContent;
+            navigator.clipboard.writeText(urlContent).then(() => {
+                alert('成功复制到剪贴板');
+            });
+            closeUrlDialog();
+        }
+
+        // Example of capturing URL changes
+        webview.addEventListener('load', () => {
+            const url = webview.contentWindow.location.href;
+            if (url.startsWith('https://webstatic.mihoyo.com/hk4e/event/e20190909gacha-v3/index.html')) {
+                showUrlDialog(url);
+            }
+        });
+
+        // Test Component
+        class TestComponent {
+            constructor(container) {
+                this.container = container;
+                this.count = 1;
+                this.render();
+            }
+
+            increment() {
+                this.count += 1;
+                this.render();
+            }
+
+            render() {
+                this.container.innerHTML = `
+                    <div>${this.count}</div>
+                    <button onclick="testComponent.increment()">11</button>
+                `;
+            }
+        }
+
+        const testContainer = document.getElementById('testContainer');
+        const testComponent = new TestComponent(testContainer);
+    </script>
 </body>
 </html>
